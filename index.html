@@ -51,10 +51,13 @@
       background-color: rgba(0, 0, 0, 0.85);
       color: #00FF00;
       font-family: 'Courier New', Courier, monospace;
+      font-size: 12px;
       max-width: 200px;
+      max-height: 530px;
       padding: 20px;
       box-shadow: 0 0 2px #0f0;
       width: 200px;
+      height: 530px;
       z-index: 10;
     }
 
@@ -220,13 +223,16 @@
     }
 
     #footer-text {
+      position: fixed;
+      bottom: 10px;
+      left: 0;
+      width: 100%;
       text-align: center;
       color: #00FF00AA;
       font-size: 12px;
       font-family: 'Courier New', Courier, monospace;
-      margin-top: 100px;
       user-select: none;
-      z-index: 10;
+      z-index: 20;
     }
   </style>
 </head>
@@ -258,11 +264,16 @@
     </div>
 
     <div id="tutorial-panel">
-      <h2>Tutorial</h2>
+      <h2>DIGITAL PET MINER!</h2>
       <p>- Click the creature to mine data.</p>
       <p>- Upgrade G.P.U to increase mining power.</p>
       <p>- Upgrade R.A.M to mine faster.</p>
+      <p>- Passive data mining increases with G.P.U upgrades.</p>
+      <p>- R.A.M upgrades decrease mining time.</p>
+      <p>- Progress bar shows time until next auto-mine.</p>
       <p>- Once G.P.U is maxed, evolve your creature!</p>
+      <p>- Creature grows larger with each evolution.</p>
+      <p>- Evolution resets upgrades but increases power.</p>
       <p>- Reach max evolution.</p>
     </div>
   </div>
@@ -526,4 +537,3 @@
   </script>
 </body>
 </html>
-
