@@ -33,6 +33,21 @@
       background-color: rgba(0, 0, 0, 0.85);
       z-index: 10;
       user-select: none;
+      width: 90vw;
+      max-width: 500px;
+    }
+
+    @media (max-width: 520px) {
+      #game-container {
+        padding: 15px;
+      }
+      #creature-box {
+        height: 150px;
+      }
+      button {
+        font-size: 14px;
+        padding: 8px;
+      }
     }
 
     h1 {
@@ -104,6 +119,7 @@
       pointer-events: none;
       animation: floatUp 1s ease-out forwards;
       z-index: 10;
+      user-select: none;
     }
 
     @keyframes floatUp {
@@ -128,10 +144,16 @@
       margin-bottom: 5px;
       z-index: 10;
       position: relative;
+      transition: background-color 0.3s;
     }
 
-    button:hover {
+    button:hover:not(:disabled) {
       background-color: #003300;
+    }
+
+    button:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
     }
 
     #evolve-btn {
@@ -183,15 +205,15 @@
 
     <div id="game-container">
       <div id="creature-box">
-        <div id="creature"></div>
+        <div id="creature" title="Click me to mine 1 data"></div>
         <div id="floor"></div>
       </div>
 
-      <div id="progress-wrapper">
+      <div id="progress-wrapper" aria-label="Progress of passive mining">
         <div id="progress-bar"></div>
       </div>
 
-      <div id="stats">
+      <div id="stats" aria-live="polite" aria-atomic="true">
         <p>Total Data: <span id="points">0</span></p>
         <p>Data Mining: <span id="passive">1</span></p>
         <p>Speed: <span id="interval">10.0</span>s</p>
@@ -199,17 +221,17 @@
         <p>R.A.M Level: <span id="speed-level">0</span></p>
         <p>Evolution: <span id="evolve-level">0</span></p>
       </div>
-      <button id="strength-btn">Upgrade G.P.U</button>
-      <button id="speed-btn">Upgrade R.A.M</button>
-      <button id="evolve-btn">Evolve Creature</button>
-      <button id="reset-btn">Reset Game</button>
+      <button id="strength-btn" title="Increase GPU to mine more data per interval">Upgrade G.P.U</button>
+      <button id="speed-btn" title="Increase RAM to mine data faster">Upgrade R.A.M</button>
+      <button id="evolve-btn" title="Evolve your creature to unlock higher levels">Evolve Creature</button>
+      <button id="reset-btn" title="Reset all progress">Reset Game</button>
     </div>
 
     <div id="footer-text">made by [Brackets]</div>
   </div>
 
   <script>
-    // Matrix background animation
+    // Matrix animation and resizing
     const canvas = document.getElementById('matrix-canvas');
     const ctx = canvas.getContext('2d');
 
@@ -225,8 +247,8 @@
 
     const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%^&*()-_=+[]{}<>?/\\|';
     const fontSize = 16;
-    const columns = Math.floor(width / fontSize);
-    const drops = new Array(columns).fill(0);
+    let columns = Math.floor(width / fontSize);
+    let drops = new Array(columns).fill(0);
 
     function drawMatrix() {
       ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
@@ -247,7 +269,7 @@
     }
     drawMatrix();
 
-    // Game logic
+    // Game logic variables
     const creature = document.getElementById('creature');
     const pointsDisplay = document.getElementById('points');
     const passiveDisplay = document.getElementById('passive');
@@ -276,6 +298,7 @@
     const saveKey = 'hackerCreatureSave';
     const autosaveIntervalMs = 5000;
 
+    // Save/load
     function saveGame() {
       const saveData = {
         points,
@@ -313,6 +336,7 @@
       }
     }
 
+    // Cost functions
     function getMaxStrength() {
       return (evolved + 1) * 10;
     }
@@ -329,9 +353,10 @@
       return 200 + evolved * 150;
     }
 
+    // UI updates
     function updateUI() {
-      pointsDisplay.textContent = points;
-      passiveDisplay.textContent = passivePoints;
+      pointsDisplay.textContent = points.toLocaleString();
+      passiveDisplay.textContent = passivePoints.toLocaleString();
       intervalDisplay.textContent = (interval / 1000).toFixed(1);
       strengthLevelDisplay.textContent = strengthLevel;
       speedLevelDisplay.textContent = speedLevel;
@@ -348,16 +373,28 @@
         ? "Upgrade R.A.M (MAX)"
         : `Upgrade R.A.M (Cost: ${getSpeedCost()} pts)`;
 
-      evolveBtn.style.display = (strengthLevel >= getMaxStrength() && evolved < maxEvolves) ? 'block' : 'none';
+      if (strengthLevel >= getMaxStrength() &&
+          evolved < maxEvolves && points >= getEvolveCost()) {
+        evolveBtn.style.display = 'block';
+        evolveBtn.textContent = `Evolve Creature (Cost: ${getEvolveCost()} pts)`;
+        evolveBtn.disabled = false;
+      } else {
+        evolveBtn.style.display = 'none';
+      }
+
       resetBtn.style.display = evolved >= maxEvolves ? 'block' : 'none';
     }
 
+    // Creature feedback
     function floatText(value) {
       const text = document.createElement('div');
       text.className = 'floating-text';
       text.textContent = `+${value}`;
-      const x = creature.offsetLeft + creature.offsetWidth / 2 - 10;
-      const y = creature.offsetTop - 20;
+      const rect = creature.getBoundingClientRect();
+      const containerRect = creatureBox.getBoundingClientRect();
+      // Position relative to creatureBox container
+      const x = rect.left - containerRect.left + rect.width / 2 - 10;
+      const y = rect.top - containerRect.top - 20;
       text.style.left = `${x}px`;
       text.style.top = `${y}px`;
       creatureBox.appendChild(text);
@@ -372,7 +409,10 @@
       resetProgressBar();
     }
 
+    // Improved click animation with reset
     function playClickAnimation() {
+      creature.style.animation = 'none'; // reset animation
+      void creature.offsetWidth; // trigger reflow
       creature.style.animation = 'clickEffect 0.2s';
       creature.addEventListener('animationend', () => {
         creature.style.animation = '';
@@ -395,8 +435,9 @@
       }, moveRate);
     }
 
+    // Button clicks
     creature.addEventListener('click', () => {
-      points += 1;
+      points++;
       playClickAnimation();
       floatText(1);
       updateUI();
@@ -407,8 +448,9 @@
       if (points >= cost && strengthLevel < getMaxStrength()) {
         points -= cost;
         strengthLevel++;
-        passivePoints++;
+        passivePoints = strengthLevel * (1 + evolved);
         updateUI();
+        startPassiveGeneration();
       }
     });
 
@@ -417,65 +459,62 @@
       if (points >= cost && interval > 200) {
         points -= cost;
         speedLevel++;
-        interval = Math.max(200, interval - 500);
+        interval = Math.max(200, 10000 - speedLevel * 1000);
+        updateUI();
         startPassiveGeneration();
         startMovement();
-        updateUI();
       }
     });
 
     evolveBtn.addEventListener('click', () => {
       const cost = getEvolveCost();
-      if (points >= cost && evolved < maxEvolves) {
+      if (points >= cost && strengthLevel >= getMaxStrength() && evolved < maxEvolves) {
         points -= cost;
         evolved++;
-        strengthLevel = 0;
-        const newSize = 30 + 10 * evolved;
-        creature.style.width = `${newSize}px`;
-        creature.style.height = `${newSize}px`;
-        updateUI();
-      }
-    });
-
-    resetBtn.addEventListener('click', () => {
-      if (confirm("Are you sure you want to reset the game?")) {
-        points = 0;
         strengthLevel = 1;
         speedLevel = 0;
-        passivePoints = 1;
+        passivePoints = strengthLevel * (1 + evolved);
         interval = 10000;
-        evolved = 0;
         creaturePosition = 50;
         const newSize = 30 + 10 * evolved;
         creature.style.width = `${newSize}px`;
         creature.style.height = `${newSize}px`;
-        creature.style.left = `${creaturePosition}%`;
+        creature.style.left = '50%';
         updateUI();
         startPassiveGeneration();
         startMovement();
-        saveGame();
       }
     });
 
+    resetBtn.addEventListener('click', () => {
+      if (confirm('Are you sure you want to reset the game? All progress will be lost.')) {
+        localStorage.removeItem(saveKey);
+        location.reload();
+      }
+    });
+
+    // Progress bar
+    let progressStart = Date.now();
     function resetProgressBar() {
-      lastTick = Date.now();
+      progressStart = Date.now();
       progressBar.style.width = '0%';
     }
 
     function updateProgressBar() {
-      const now = Date.now();
-      const elapsed = now - lastTick;
-      let progress = (elapsed / interval) * 100;
-      if (progress > 100) progress = 100;
+      const elapsed = Date.now() - progressStart;
+      const progress = Math.min(100, (elapsed / interval) * 100);
       progressBar.style.width = progress + '%';
       requestAnimationFrame(updateProgressBar);
     }
 
+    // Initialization
     loadGame();
     updateUI();
     startPassiveGeneration();
     startMovement();
     updateProgressBar();
+
+    // Autosave every 5 seconds
     setInterval(saveGame, autosaveIntervalMs);
     window.addEventListener('beforeunload', saveGame);
   </script>
