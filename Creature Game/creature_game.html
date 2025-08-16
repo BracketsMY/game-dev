@@ -33,6 +33,20 @@
       background-color: rgba(0, 0, 0, 0.85);
       z-index: 10;
       user-select: none;
+      width: 90vw;
+    }
+
+    @media (max-width: 520px) {
+      #game-container {
+        padding: 15px;
+      }
+      #creature-box {
+        height: 150px;
+      }
+      button {
+        font-size: 14px;
+        padding: 8px;
+      }
     }
 
     h1 {
@@ -104,6 +118,7 @@
       pointer-events: none;
       animation: floatUp 1s ease-out forwards;
       z-index: 10;
+      user-select: none;
     }
 
     @keyframes floatUp {
@@ -128,20 +143,28 @@
       margin-bottom: 5px;
       z-index: 10;
       position: relative;
+      transition: background-color 0.3s;
     }
 
-    button:hover {
+    button:hover:not(:disabled) {
       background-color: #003300;
+    }
+
+    button:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
     }
 
     #evolve-btn {
       display: none;
     }
+
     #reset-btn {
       display: none;
       background-color: #550000;
       margin-top: 10px;
     }
+
     #reset-btn:hover {
       background-color: #880000;
     }
@@ -163,7 +186,6 @@
       transition: width 0.1s linear;
     }
 
-    /* Footer below game */
     #footer-text {
       text-align: center;
       color: #00FF00AA;
@@ -177,20 +199,16 @@
 </head>
 <body>
   <canvas id="matrix-canvas"></canvas>
-
   <div style="display: flex; flex-direction: column; align-items: center; min-height: 100vh; justify-content: flex-start;">
     <h1>💀 DIGITAL PET MINER</h1>
-
     <div id="game-container">
       <div id="creature-box">
-        <div id="creature"></div>
+        <div id="creature" title="Click me to mine 1 data"></div>
         <div id="floor"></div>
       </div>
-
       <div id="progress-wrapper">
         <div id="progress-bar"></div>
       </div>
-
       <div id="stats">
         <p>Total Data: <span id="points">0</span></p>
         <p>Data Mining: <span id="passive">1</span></p>
@@ -199,20 +217,16 @@
         <p>R.A.M Level: <span id="speed-level">0</span></p>
         <p>Evolution: <span id="evolve-level">0</span></p>
       </div>
-      <button id="strength-btn">Upgrade Strength</button>
-      <button id="speed-btn">Upgrade Speed</button>
+      <button id="strength-btn">Upgrade G.P.U</button>
+      <button id="speed-btn">Upgrade R.A.M</button>
       <button id="evolve-btn">Evolve Creature</button>
       <button id="reset-btn">Reset Game</button>
     </div>
-
     <div id="footer-text">made by [Brackets]</div>
   </div>
-
   <script>
-    // Matrix background animation
     const canvas = document.getElementById('matrix-canvas');
     const ctx = canvas.getContext('2d');
-
     let width, height;
     function resize() {
       width = window.innerWidth;
@@ -222,18 +236,15 @@
     }
     window.addEventListener('resize', resize);
     resize();
-
     const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%^&*()-_=+[]{}<>?/\\|';
     const fontSize = 16;
-    const columns = Math.floor(width / fontSize);
-    const drops = new Array(columns).fill(0);
-
+    let columns = Math.floor(width / fontSize);
+    let drops = new Array(columns).fill(0);
     function drawMatrix() {
       ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
       ctx.fillRect(0, 0, width, height);
       ctx.fillStyle = '#0F0';
       ctx.font = fontSize + 'px monospace';
-
       for (let i = 0; i < drops.length; i++) {
         const text = letters.charAt(Math.floor(Math.random() * letters.length));
         const x = i * fontSize;
@@ -242,12 +253,10 @@
         if (y > height && Math.random() > 0.975) drops[i] = 0;
         drops[i]++;
       }
-
       requestAnimationFrame(drawMatrix);
     }
     drawMatrix();
 
-    // Game logic
     const creature = document.getElementById('creature');
     const pointsDisplay = document.getElementById('points');
     const passiveDisplay = document.getElementById('passive');
@@ -272,46 +281,8 @@
     let creaturePosition = 50;
     let evolved = 0;
     const maxEvolves = 5;
-    let lastTick = Date.now();
     const saveKey = 'hackerCreatureSave';
     const autosaveIntervalMs = 5000;
-
-    function saveGame() {
-      const saveData = {
-        points,
-        strengthLevel,
-        speedLevel,
-        passivePoints,
-        interval,
-        evolved,
-        creaturePosition
-      };
-      localStorage.setItem(saveKey, JSON.stringify(saveData));
-    }
-
-    function loadGame() {
-      const saved = localStorage.getItem(saveKey);
-      if (saved) {
-        try {
-          const data = JSON.parse(saved);
-          if (data) {
-            points = data.points ?? points;
-            strengthLevel = data.strengthLevel ?? strengthLevel;
-            speedLevel = data.speedLevel ?? speedLevel;
-            passivePoints = data.passivePoints ?? passivePoints;
-            interval = data.interval ?? interval;
-            evolved = data.evolved ?? evolved;
-            creaturePosition = data.creaturePosition ?? creaturePosition;
-            const newSize = 30 + 10 * evolved;
-            creature.style.width = newSize + 'px';
-            creature.style.height = newSize + 'px';
-            creature.style.left = creaturePosition + '%';
-          }
-        } catch (e) {
-          console.error('Failed to load save data:', e);
-        }
-      }
-    }
 
     function getMaxStrength() {
       return (evolved + 1) * 10;
@@ -330,25 +301,32 @@
     }
 
     function updateUI() {
-      pointsDisplay.textContent = points;
-      passiveDisplay.textContent = passivePoints;
+      pointsDisplay.textContent = points.toLocaleString();
+      passiveDisplay.textContent = passivePoints.toLocaleString();
       intervalDisplay.textContent = (interval / 1000).toFixed(1);
       strengthLevelDisplay.textContent = strengthLevel;
       speedLevelDisplay.textContent = speedLevel;
       evolveLevelDisplay.textContent = `${evolved}/${maxEvolves}`;
-
       strengthBtn.disabled = strengthLevel >= getMaxStrength();
       speedBtn.disabled = interval <= 200;
-
       strengthBtn.textContent = strengthLevel >= getMaxStrength()
-        ? "Upgrade Strength (MAX)"
-        : `Upgrade Strength (Cost: ${getStrengthCost()} pts)`;
-
+        ? "Upgrade G.P.U (MAX)"
+        : `Upgrade G.P.U (Cost: ${getStrengthCost()} pts)`;
       speedBtn.textContent = interval <= 200
-        ? "Upgrade Speed (MAX)"
-        : `Upgrade Speed (Cost: ${getSpeedCost()} pts)`;
-
-      evolveBtn.style.display = (strengthLevel >= getMaxStrength() && evolved < maxEvolves) ? 'block' : 'none';
+        ? "Upgrade R.A.M (MAX)"
+        : `Upgrade R.A.M (Cost: ${getSpeedCost()} pts)`;
+      if (strengthLevel >= getMaxStrength() && evolved < maxEvolves) {
+        evolveBtn.style.display = 'block';
+        const evolveCost = getEvolveCost();
+        evolveBtn.textContent = `Evolve Creature (Cost: ${evolveCost} pts)`;
+        evolveBtn.disabled = points < evolveCost;
+      } else if (evolved >= maxEvolves) {
+        evolveBtn.style.display = 'block';
+        evolveBtn.textContent = `Evolve Creature (MAX)`;
+        evolveBtn.disabled = true;
+      } else {
+        evolveBtn.style.display = 'none';
+      }
       resetBtn.style.display = evolved >= maxEvolves ? 'block' : 'none';
     }
 
@@ -356,12 +334,23 @@
       const text = document.createElement('div');
       text.className = 'floating-text';
       text.textContent = `+${value}`;
-      const x = creature.offsetLeft + creature.offsetWidth / 2 - 10;
-      const y = creature.offsetTop - 20;
+      const rect = creature.getBoundingClientRect();
+      const containerRect = creatureBox.getBoundingClientRect();
+      const x = rect.left - containerRect.left + rect.width / 2 - 10;
+      const y = rect.top - containerRect.top - 20;
       text.style.left = `${x}px`;
       text.style.top = `${y}px`;
       creatureBox.appendChild(text);
       setTimeout(() => text.remove(), 1000);
+    }
+
+    function playClickAnimation() {
+      creature.style.animation = 'none';
+      void creature.offsetWidth;
+      creature.style.animation = 'clickEffect 0.2s';
+      creature.addEventListener('animationend', () => {
+        creature.style.animation = '';
+      }, { once: true });
     }
 
     function gainPassivePoints() {
@@ -372,13 +361,6 @@
       resetProgressBar();
     }
 
-    function playClickAnimation() {
-      creature.style.animation = 'clickEffect 0.2s';
-      creature.addEventListener('animationend', () => {
-        creature.style.animation = '';
-      }, { once: true });
-    }
-
     function startPassiveGeneration() {
       clearInterval(intervalId);
       intervalId = setInterval(gainPassivePoints, interval);
@@ -387,16 +369,15 @@
 
     function startMovement() {
       clearInterval(movementId);
-      const moveRate = Math.max(500, interval);
       movementId = setInterval(() => {
         const move = (Math.random() * 40) - 20;
         creaturePosition = Math.min(90, Math.max(10, creaturePosition + move));
         creature.style.left = `${creaturePosition}%`;
-      }, moveRate);
+      }, Math.max(500, interval));
     }
 
     creature.addEventListener('click', () => {
-      points += 1;
+      points++;
       playClickAnimation();
       floatText(1);
       updateUI();
@@ -407,8 +388,9 @@
       if (points >= cost && strengthLevel < getMaxStrength()) {
         points -= cost;
         strengthLevel++;
-        passivePoints++;
+        passivePoints = strengthLevel * (1 + evolved);
         updateUI();
+        startPassiveGeneration();
       }
     });
 
@@ -417,60 +399,80 @@
       if (points >= cost && interval > 200) {
         points -= cost;
         speedLevel++;
-        interval = Math.max(200, interval - 500);
+        interval = Math.max(200, 10000 - speedLevel * 1000);
+        updateUI();
         startPassiveGeneration();
         startMovement();
-        updateUI();
       }
     });
 
     evolveBtn.addEventListener('click', () => {
       const cost = getEvolveCost();
-      if (points >= cost && evolved < maxEvolves) {
+      if (points >= cost && strengthLevel >= getMaxStrength() && evolved < maxEvolves) {
         points -= cost;
         evolved++;
-        strengthLevel = 0;
+        strengthLevel = 1;
+        speedLevel = 0;
+        passivePoints = strengthLevel * (1 + evolved);
+        interval = 10000;
         const newSize = 30 + 10 * evolved;
-        creature.style.width = `${newSize}px`;
-        creature.style.height = `${newSize}px`;
+        creature.style.width = newSize + 'px';
+        creature.style.height = newSize + 'px';
+        creaturePosition = 50;
+        creature.style.left = '50%';
         updateUI();
+        startPassiveGeneration();
+        startMovement();
       }
     });
 
     resetBtn.addEventListener('click', () => {
-      if (confirm("Are you sure you want to reset the game?")) {
-        points = 0;
-        strengthLevel = 1;
-        speedLevel = 0;
-        passivePoints = 1;
-        interval = 10000;
-        evolved = 0;
-        creaturePosition = 50;
-        const newSize = 30 + 10 * evolved;
-        creature.style.width = `${newSize}px`;
-        creature.style.height = `${newSize}px`;
-        creature.style.left = `${creaturePosition}%`;
-        updateUI();
-        startPassiveGeneration();
-        startMovement();
-        saveGame();
+      if (confirm("Are you sure you want to reset all progress?")) {
+        localStorage.removeItem(saveKey);
+        location.reload();
       }
     });
 
     function resetProgressBar() {
-      lastTick = Date.now();
+      progressStart = Date.now();
       progressBar.style.width = '0%';
     }
 
     function updateProgressBar() {
-      const now = Date.now();
-      const elapsed = now - lastTick;
-      let progress = (elapsed / interval) * 100;
-      if (progress > 100) progress = 100;
+      const elapsed = Date.now() - progressStart;
+      const progress = Math.min(100, (elapsed / interval) * 100);
       progressBar.style.width = progress + '%';
       requestAnimationFrame(updateProgressBar);
     }
 
+    function saveGame() {
+      const data = {
+        points, strengthLevel, speedLevel, passivePoints, interval, evolved, creaturePosition
+      };
+      localStorage.setItem(saveKey, JSON.stringify(data));
+    }
+
+    function loadGame() {
+      const saved = localStorage.getItem(saveKey);
+      if (!saved) return;
+      try {
+        const data = JSON.parse(saved);
+        if (!data) return;
+        points = data.points ?? points;
+        strengthLevel = data.strengthLevel ?? strengthLevel;
+        speedLevel = data.speedLevel ?? speedLevel;
+        passivePoints = data.passivePoints ?? passivePoints;
+        interval = data.interval ?? interval;
+        evolved = data.evolved ?? evolved;
+        creaturePosition = data.creaturePosition ?? creaturePosition;
+        const newSize = 30 + 10 * evolved;
+        creature.style.width = newSize + 'px';
+        creature.style.height = newSize + 'px';
+        creature.style.left = creaturePosition + '%';
+      } catch {}
+    }
+
+    let progressStart = Date.now();
     loadGame();
     updateUI();
     startPassiveGeneration();
