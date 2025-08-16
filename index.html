@@ -195,6 +195,19 @@
       user-select: none;
       z-index: 10;
     }
+
+    /* New evolve cost display */
+    #evolve-cost-display {
+      color: #00FF00;
+      font-family: 'Courier New', monospace;
+      font-size: 14px;
+      text-align: center;
+      margin-top: -5px;
+      margin-bottom: 10px;
+      user-select: none;
+      z-index: 10;
+      display: none; /* hidden by default, shown when evolve button is visible */
+    }
   </style>
 </head>
 <body>
@@ -224,6 +237,7 @@
       <button id="strength-btn" title="Increase GPU to mine more data per interval">Upgrade G.P.U</button>
       <button id="speed-btn" title="Increase RAM to mine data faster">Upgrade R.A.M</button>
       <button id="evolve-btn" title="Evolve your creature to unlock higher levels">Evolve Creature</button>
+      <div id="evolve-cost-display"></div>
       <button id="reset-btn" title="Reset all progress">Reset Game</button>
     </div>
 
@@ -283,6 +297,7 @@
     const resetBtn = document.getElementById('reset-btn');
     const creatureBox = document.getElementById('creature-box');
     const progressBar = document.getElementById('progress-bar');
+    const evolveCostDisplay = document.getElementById('evolve-cost-display');
 
     let points = 0;
     let strengthLevel = 1;
@@ -378,8 +393,18 @@
         evolveBtn.style.display = 'block';
         evolveBtn.textContent = `Evolve Creature (Cost: ${getEvolveCost()} pts)`;
         evolveBtn.disabled = false;
+        evolveCostDisplay.style.display = 'block';
+        evolveCostDisplay.textContent = `Evolve Cost: ${getEvolveCost().toLocaleString()} points`;
+      } else if (strengthLevel >= getMaxStrength() && evolved < maxEvolves) {
+        // Show evolve cost but disable button if not enough points
+        evolveBtn.style.display = 'block';
+        evolveBtn.textContent = `Evolve Creature (Cost: ${getEvolveCost()} pts)`;
+        evolveBtn.disabled = true;
+        evolveCostDisplay.style.display = 'block';
+        evolveCostDisplay.textContent = `Evolve Cost: ${getEvolveCost().toLocaleString()} points`;
       } else {
         evolveBtn.style.display = 'none';
+        evolveCostDisplay.style.display = 'none';
       }
 
       resetBtn.style.display = evolved >= maxEvolves ? 'block' : 'none';
@@ -448,9 +473,8 @@
       if (points >= cost && strengthLevel < getMaxStrength()) {
         points -= cost;
         strengthLevel++;
-        passivePoints = strengthLevel * (1 + evolved);
+        passivePoints += 1;
         updateUI();
-        startPassiveGeneration();
       }
     });
 
@@ -459,10 +483,10 @@
       if (points >= cost && interval > 200) {
         points -= cost;
         speedLevel++;
-        interval = Math.max(200, 10000 - speedLevel * 1000);
-        updateUI();
+        interval = Math.max(200, interval - 1000);
         startPassiveGeneration();
         startMovement();
+        updateUI();
       }
     });
 
@@ -473,13 +497,17 @@
         evolved++;
         strengthLevel = 1;
         speedLevel = 0;
-        passivePoints = strengthLevel * (1 + evolved);
+        passivePoints = 1;
         interval = 10000;
-        creaturePosition = 50;
+        // Increase creature size on evolve
         const newSize = 30 + 10 * evolved;
-        creature.style.width = `${newSize}px`;
-        creature.style.height = `${newSize}px`;
-        creature.style.left = '50%';
+        creature.style.width = newSize + 'px';
+        creature.style.height = newSize + 'px';
+
+        // Reset creature position to center
+        creaturePosition = 50;
+        creature.style.left = creaturePosition + '%';
+
         updateUI();
         startPassiveGeneration();
         startMovement();
@@ -487,23 +515,39 @@
     });
 
     resetBtn.addEventListener('click', () => {
-      if (confirm('Are you sure you want to reset the game? All progress will be lost.')) {
-        localStorage.removeItem(saveKey);
-        location.reload();
+      if (confirm("Are you sure you want to reset all progress?")) {
+        points = 0;
+        strengthLevel = 1;
+        speedLevel = 0;
+        passivePoints = 1;
+        interval = 10000;
+        evolved = 0;
+        creaturePosition = 50;
+        creature.style.width = '30px';
+        creature.style.height = '30px';
+        creature.style.left = '50%';
+
+        updateUI();
+        startPassiveGeneration();
+        startMovement();
+        saveGame();
       }
     });
 
     // Progress bar
     let progressStart = Date.now();
+
     function resetProgressBar() {
       progressStart = Date.now();
       progressBar.style.width = '0%';
     }
 
     function updateProgressBar() {
-      const elapsed = Date.now() - progressStart;
-      const progress = Math.min(100, (elapsed / interval) * 100);
-      progressBar.style.width = progress + '%';
+      const now = Date.now();
+      const elapsed = now - progressStart;
+      let percent = (elapsed / interval) * 100;
+      if (percent > 100) percent = 100;
+      progressBar.style.width = percent + '%';
       requestAnimationFrame(updateProgressBar);
     }
 
@@ -514,9 +558,8 @@
     startMovement();
     updateProgressBar();
 
-    // Autosave every 5 seconds
+    // Autosave
     setInterval(saveGame, autosaveIntervalMs);
-    window.addEventListener('beforeunload', saveGame);
   </script>
 </body>
 </html>
