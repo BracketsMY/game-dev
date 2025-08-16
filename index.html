@@ -426,15 +426,11 @@
       }
     });
 
-    resetBtn.addEventListener('click', () => {
+resetBtn.addEventListener('click', () => {
   if (confirm("Are you sure you want to reset all progress?")) {
-    localStorage.removeItem(saveKey);
-    setTimeout(() => {
-      location.reload();
-    }, 100);
+    restartGame();
   }
 });
-
     function resetProgressBar() {
       progressStart = Date.now();
       progressBar.style.width = '0%';
@@ -482,8 +478,38 @@
     updateProgressBar();
     setInterval(saveGame, autosaveIntervalMs);
     window.addEventListener('beforeunload', saveGame);
+    function restartGame() {
+  // Reset variables
+  points = 0;
+  strengthLevel = 1;
+  speedLevel = 0;
+  passivePoints = 1;
+  interval = 10000;
+  evolved = 0;
+  creaturePosition = 50;
+
+  // Reset creature size and position
+  const newSize = 30 + 10 * evolved;
+  creature.style.width = newSize + 'px';
+  creature.style.height = newSize + 'px';
+  creature.style.left = creaturePosition + '%';
+
+  // Reset UI
+  updateUI();
+
+  // Restart passive points generation and movement
+  startPassiveGeneration();
+  startMovement();
+
+  // Reset progress bar
+  resetProgressBar();
+
+  // Remove saved data from localStorage
+  localStorage.removeItem(saveKey);
+}
   </script>
 </body>
 </html>
+
 
 
