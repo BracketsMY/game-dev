@@ -23,17 +23,50 @@
       background-color: black;
     }
 
+    .main-wrapper {
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      gap: 20px;
+      padding-top: 40px;
+      flex-wrap: wrap;
+      z-index: 10;
+      position: relative;
+    }
+
     #game-container {
       position: relative;
       border: 2px solid #0f0;
       padding: 20px;
       max-width: 500px;
-      margin: 40px auto;
       box-shadow: 0 0 2px #0f0;
       background-color: rgba(0, 0, 0, 0.85);
       z-index: 10;
       user-select: none;
       width: 90vw;
+    }
+
+    #tutorial-panel {
+      border: 2px solid #0f0;
+      background-color: rgba(0, 0, 0, 0.85);
+      color: #00FF00;
+      font-family: 'Courier New', Courier, monospace;
+      max-width: 200px;
+      padding: 20px;
+      box-shadow: 0 0 2px #0f0;
+      width: 200px;
+      z-index: 10;
+    }
+
+    @media (max-width: 900px) {
+      .main-wrapper {
+        flex-direction: column;
+        align-items: center;
+      }
+      #tutorial-panel {
+        width: 90vw;
+        max-width: none;
+      }
     }
 
     @media (max-width: 520px) {
@@ -199,8 +232,9 @@
 </head>
 <body>
   <canvas id="matrix-canvas"></canvas>
-  <div style="display: flex; flex-direction: column; align-items: center; min-height: 100vh; justify-content: flex-start;">
-    <h1>💀 DIGITAL PET MINER</h1>
+  <h1>💀 DIGITAL PET MINER</h1>
+
+  <div class="main-wrapper">
     <div id="game-container">
       <div id="creature-box">
         <div id="creature" title="Click me to mine 1 data"></div>
@@ -222,8 +256,19 @@
       <button id="evolve-btn">Evolve Creature</button>
       <button id="reset-btn">Reset Game</button>
     </div>
-    <div id="footer-text">made by [Brackets]</div>
+
+    <div id="tutorial-panel">
+      <h2>Tutorial</h2>
+      <p>- Click the creature to mine data.</p>
+      <p>- Upgrade G.P.U to increase mining power.</p>
+      <p>- Upgrade R.A.M to mine faster.</p>
+      <p>- Once G.P.U is maxed, evolve your creature!</p>
+      <p>- Reach max evolution.</p>
+    </div>
   </div>
+
+  <div id="footer-text">made by [Brackets]</div>
+
   <script>
     const canvas = document.getElementById('matrix-canvas');
     const ctx = canvas.getContext('2d');
@@ -282,7 +327,7 @@
     let evolved = 0;
     const maxEvolves = 5;
     const saveKey = 'hackerCreatureSave';
-    const autosaveIntervalMs = 5000;
+    const autosaveIntervalMs = 10000;
 
     function getMaxStrength() {
       return (evolved + 1) * 10;
@@ -428,8 +473,7 @@
 
     resetBtn.addEventListener('click', () => {
       if (confirm("Are you sure you want to reset all progress?")) {
-        localStorage.removeItem(saveKey);
-        location.reload();
+        restartGame();
       }
     });
 
@@ -479,7 +523,6 @@
     startMovement();
     updateProgressBar();
     setInterval(saveGame, autosaveIntervalMs);
-    window.addEventListener('beforeunload', saveGame);
   </script>
 </body>
 </html>
