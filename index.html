@@ -341,12 +341,12 @@
       speedBtn.disabled = interval <= 200;
 
       strengthBtn.textContent = strengthLevel >= getMaxStrength()
-        ? "Upgrade Strength (MAX)"
-        : `Upgrade Strength (Cost: ${getStrengthCost()} pts)`;
+        ? "Upgrade G.P.U (MAX)"
+        : `Upgrade G.P.U (Cost: ${getStrengthCost()} pts)`;
 
       speedBtn.textContent = interval <= 200
-        ? "Upgrade Speed (MAX)"
-        : `Upgrade Speed (Cost: ${getSpeedCost()} pts)`;
+        ? "Upgrade R.A.M (MAX)"
+        : `Upgrade R.A.M (Cost: ${getSpeedCost()} pts)`;
 
       evolveBtn.style.display = (strengthLevel >= getMaxStrength() && evolved < maxEvolves) ? 'block' : 'none';
       resetBtn.style.display = evolved >= maxEvolves ? 'block' : 'none';
